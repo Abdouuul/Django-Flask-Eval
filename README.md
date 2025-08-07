@@ -1,6 +1,6 @@
 # READ ME
 
-Project CocktAIL par Abdoul.
+Projet CocktAIL par Abdoul.
 
 **<span style="color:red">Attention : L'installation du modèle de génération d'images est d'environ 12GB, Vous pouvez désactiver la generation d'image dans .env</span>**
 
