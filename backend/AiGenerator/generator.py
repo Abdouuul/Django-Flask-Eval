@@ -5,6 +5,10 @@ from django.contrib.auth.models import User
 from cocktail.models import Cocktail, Ingredient
 from typing import Optional
 from langgraph.graph import StateGraph, END
+from APIEval.settings import IMAGE_GENERATION
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from uuid import uuid4
+import io
 
 
 llm = ChatOllama(model="llama3")
@@ -13,6 +17,9 @@ class ReplyContent(BaseModel):
     reply: str
 
 class GeneratorState(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        
     user_id: Optional[int] = None
     message: Optional[str] = None
     is_cocktail: bool = False
@@ -22,6 +29,8 @@ class GeneratorState(BaseModel):
     cocktail_music_type: str = None
     cocktail_ingredients: list[str] = None
     cocktail_image_prompt: str = None
+    cocktail_image: Optional[InMemoryUploadedFile] = None
+
 
 class IsRequestCocktail(BaseModel):
     is_cocktail: bool
@@ -110,6 +119,14 @@ def extract_info(state: GeneratorState) -> GeneratorState:
         cocktail_image_prompt = result.cocktail_image_prompt
     )
 
+def generate_request_image(state: GeneratorState) -> GeneratorState:
+    if IMAGE_GENERATION == "True":
+        from .image_generator import generate_image
+
+        image_id = uuid4()
+        state.cocktail_image = generate_image(state.cocktail_image_prompt, image_id)
+    
+    return state
 
 def create_cocktail_ingredients(state: GeneratorState) -> GeneratorState: 
     name = state.cocktail_name
@@ -121,7 +138,7 @@ def create_cocktail_ingredients(state: GeneratorState) -> GeneratorState:
         description=description,
         music_type=state.cocktail_music_type,
         user = user,
-
+        generated_image = state.cocktail_image
     )
 
     try:
@@ -135,6 +152,7 @@ def create_cocktail_ingredients(state: GeneratorState) -> GeneratorState:
 
     return state
 
+    
 
 acknowledge_prompt = PromptTemplate.from_template("""
     Inform the user that the cocktail {cocktailname} has been successfully added.
@@ -185,12 +203,14 @@ graph.add_node("detect_cocktail_intent", detect_cocktail_intent)
 graph.add_node("extract_info", extract_info)
 graph.add_node("respond_to_user", respond_to_user)
 graph.add_node("create_cocktail_ingredients", create_cocktail_ingredients)
+graph.add_node("generate_request_image", generate_request_image)
 graph.add_node("inform_user_cocktail_created", inform_user_cocktail_created)
 
 # Graph execution order
 graph.set_entry_point("detect_cocktail_intent")
 graph.add_conditional_edges("detect_cocktail_intent", lambda state: "extract_info" if state.is_cocktail else "respond_to_user")
-graph.add_edge("extract_info", "create_cocktail_ingredients")
+graph.add_conditional_edges("extract_info", lambda state: "generate_request_image" if state.cocktail_image_prompt else "create_cocktail_ingredients")
+graph.add_edge("generate_request_image", "create_cocktail_ingredients")
 graph.add_edge("create_cocktail_ingredients", "inform_user_cocktail_created")
 graph.add_edge("inform_user_cocktail_created", END)
 graph.add_edge("respond_to_user", END)

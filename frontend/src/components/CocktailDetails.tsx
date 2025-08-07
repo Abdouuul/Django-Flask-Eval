@@ -13,6 +13,7 @@ export interface ICocktailDetail {
   description: string;
   ingredients: Array<IIngredient>;
   music_type: string;
+  generated_image;
 }
 
 export const CocktailDetail: FC = () => {
@@ -22,13 +23,14 @@ export const CocktailDetail: FC = () => {
 
   useEffect(() => {
     axios
-      .get(`http://127.0.0.1:8000/api/cocktails/${id}`, {
+      .get(`http://127.0.0.1:8000/api/cocktails/${id}/`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       })
       .then((res) => {
         setCocktail(res.data);
+        console.log(cocktail?.generated_image);
       })
       .catch((err) => {
         console.log("Error while retrieving cocktail details" + err);
@@ -55,6 +57,15 @@ export const CocktailDetail: FC = () => {
               <li key={ingredient.id}>{ingredient.name}</li>
             ))}
           </ul>
+        </div>
+        {/* display image next to ingredients */}
+
+        <div className="flex justify-center mb-6">
+          <img
+            src={cocktail?.generated_image}
+            alt={cocktail?.name}
+            className="rounded-lg shadow-md max-w-full h-auto"
+          />
         </div>
 
         <div className="text-center">

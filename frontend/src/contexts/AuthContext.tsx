@@ -21,15 +21,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      setAccessToken(token);
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false)
+    const validateToken = async () => {
+      const token = localStorage.getItem("accessToken");
+      const refresh = localStorage.getItem("refreshToken");
+      if (token) {
+        try {
+          setAccessToken(token);
+          setRefreshToken(refresh);
+          await axios
+            .post("http://127.0.0.1:8000/api/token/verify/", {
+              token: token,
+            })
+            .catch((err) => {
+              axios.post("http://127.0.0.1:8000/api/token/refresh/", {
+                refresh: refresh,
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }).then((res) => {
+                localStorage.setItem("accessToken", res.data.access);
+                setAccessToken(res.data.access);
+                setIsAuthenticated(true);
+              })
+            });
+          setIsAuthenticated(true);
+        } catch (err) {
+          console.log("Token not valid :", err);
+          logout();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    validateToken();
   }, []);
 
   const login = (username: string, password: string) => {
@@ -60,7 +88,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         accessToken: accessToken,
         isLoading: isLoading,
         login: login,
-        logout: logout
+        logout: logout,
       }}
     >
       {children}

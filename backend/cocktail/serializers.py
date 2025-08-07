@@ -16,4 +16,4 @@ class CocktailSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Cocktail
-        fields = ['id', 'name', 'description', 'ingredients', 'music_type']
+        fields = ['id', 'name', 'description', 'ingredients', 'music_type', 'generated_image']
