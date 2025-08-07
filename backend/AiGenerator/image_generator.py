@@ -1,14 +1,14 @@
-from diffusers import StableDiffusionPipeline
-import torch, io
 from APIEval.settings import IMAGE_GENERATION
-from django.core.files.uploadedfile import InMemoryUploadedFile
-
-pipe = StableDiffusionPipeline.from_pretrained(
-    "SG161222/Realistic_Vision_V5.1_noVAE",
-    # safety_checker=None
-).to("cpu")
-
 if IMAGE_GENERATION =="True":
+    from diffusers import StableDiffusionPipeline
+    import torch, io
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+
+    pipe = StableDiffusionPipeline.from_pretrained(
+        "SG161222/Realistic_Vision_V5.1_noVAE",
+        # safety_checker=None
+    ).to("cpu")
+
     def generate_image(prompt:str, id:str):
         prompt = str(prompt).replace('%20', ' ')
         try:

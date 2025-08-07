@@ -7,9 +7,9 @@ from typing import Optional
 from langgraph.graph import StateGraph, END
 from APIEval.settings import IMAGE_GENERATION
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from uuid import uuid4
 import io
 
+from uuid import uuid4
 
 llm = ChatOllama(model="llama3")
 
@@ -120,12 +120,11 @@ def extract_info(state: GeneratorState) -> GeneratorState:
     )
 
 def generate_request_image(state: GeneratorState) -> GeneratorState:
-    if IMAGE_GENERATION == "True":
-        from .image_generator import generate_image
+    from .image_generator import generate_image
 
-        image_id = uuid4()
-        state.cocktail_image = generate_image(state.cocktail_image_prompt, image_id)
-    
+    image_id = uuid4()
+    state.cocktail_image = generate_image(state.cocktail_image_prompt, image_id)
+
     return state
 
 def create_cocktail_ingredients(state: GeneratorState) -> GeneratorState: 
@@ -209,8 +208,13 @@ graph.add_node("inform_user_cocktail_created", inform_user_cocktail_created)
 # Graph execution order
 graph.set_entry_point("detect_cocktail_intent")
 graph.add_conditional_edges("detect_cocktail_intent", lambda state: "extract_info" if state.is_cocktail else "respond_to_user")
-graph.add_conditional_edges("extract_info", lambda state: "generate_request_image" if state.cocktail_image_prompt else "create_cocktail_ingredients")
-graph.add_edge("generate_request_image", "create_cocktail_ingredients")
+
+if IMAGE_GENERATION == "True":
+    print("Image generation is on !")
+    graph.add_conditional_edges("extract_info", lambda state: "generate_request_image" if state.cocktail_image_prompt else "create_cocktail_ingredients")
+    graph.add_edge("generate_request_image", "create_cocktail_ingredients")
+else:
+    graph.add_edge("extract_info", "create_cocktail_ingredients")
 graph.add_edge("create_cocktail_ingredients", "inform_user_cocktail_created")
 graph.add_edge("inform_user_cocktail_created", END)
 graph.add_edge("respond_to_user", END)

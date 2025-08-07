@@ -11,6 +11,7 @@ import {
 export interface AuthContextType {
   isAuthenticated: boolean;
   accessToken: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -37,6 +38,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
               token: token,
             })
             .catch((err) => {
+              console.log(err)
               axios.post("http://127.0.0.1:8000/api/token/refresh/", {
                 refresh: refresh,
                 headers: {
@@ -86,6 +88,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
       value={{
         isAuthenticated: isAuthenticated,
         accessToken: accessToken,
+        refreshToken: refreshToken,
         isLoading: isLoading,
         login: login,
         logout: logout,

@@ -13,7 +13,7 @@ export interface ICocktailDetail {
   description: string;
   ingredients: Array<IIngredient>;
   music_type: string;
-  generated_image;
+  generated_image: string;
 }
 
 export const CocktailDetail: FC = () => {
@@ -35,7 +35,7 @@ export const CocktailDetail: FC = () => {
       .catch((err) => {
         console.log("Error while retrieving cocktail details" + err);
       });
-  }, [accessToken, id]);
+  }, [accessToken]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-green-200 to-blue-200">
       {/* display the info in better looking please */}
@@ -48,26 +48,28 @@ export const CocktailDetail: FC = () => {
           {cocktail?.description}
         </p>
 
-        <div className="mb-6">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-            Ingredients:
-          </h3>
-          <ul className="list-disc list-inside text-gray-700 text-lg">
-            {cocktail?.ingredients.map((ingredient) => (
-              <li key={ingredient.id}>{ingredient.name}</li>
-            ))}
-          </ul>
+        {/* Beautifully display the ingredients on the left side and the image on the right */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+          <div className="w-full md:w-1/2 mb-6 md:mb-0">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
+              Ingredients:
+            </h3>
+            <ul className="list-disc list-inside text-lg text-gray-700">
+              {cocktail?.ingredients.map((ingredient) => (
+                <li key={ingredient.id}>{ingredient.name}</li>
+              ))}
+            </ul>
+          </div>
+          {cocktail?.generated_image && (
+            <div className="w-full md:w-1/2 flex justify-center">
+              <img
+                src={cocktail.generated_image}
+                alt={cocktail.name}
+                className="rounded-lg shadow-md max-w-full h-auto"
+              />
+            </div>
+          )}
         </div>
-        {/* display image next to ingredients */}
-
-        <div className="flex justify-center mb-6">
-          <img
-            src={cocktail?.generated_image}
-            alt={cocktail?.name}
-            className="rounded-lg shadow-md max-w-full h-auto"
-          />
-        </div>
-
         <div className="text-center">
           <h3 className="text-2xl font-semibold text-gray-800 mb-3">
             Best enjoyed with:
